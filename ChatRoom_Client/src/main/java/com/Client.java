@@ -1,10 +1,10 @@
 package com;
 
-
 import java.io.*;
 import java.net.Socket;
-import java.util.Locale;
 import java.util.Scanner;
+import org.json.simple.JSONObject;
+
 
 public class Client implements Runnable{
     private String Banner = "   ________          __     ____                      \n" +
@@ -14,8 +14,11 @@ public class Client implements Runnable{
             "\\____/_/ /_/\\__,_/\\__/  /_/ |_|\\____/\\____/_/ /_/ /_/     ";
 
     private Socket client;
-    private BufferedReader in;
-    private BufferedWriter out;
+    private BufferedReader bufferedReader;
+    private BufferedWriter bufferedWriter;
+    private ObjectInputStream objectInputStream;
+    private ObjectOutputStream objectOutputStream;
+
     private boolean done;
 
     public Client(){
@@ -26,18 +29,21 @@ public class Client implements Runnable{
     public void run() {
         try{
             client = new Socket("127.0.0.1",15000);
-            out = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-            InputHandler inHandler = new InputHandler();
-            Thread t = new Thread(inHandler);
-            t.start();
+            objectInputStream = new ObjectInputStream(client.getInputStream());
+            objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+
+            OutputHandler inputHandler = new OutputHandler();
+            InputHandler inputObjecthandler = new InputHandler();
 
             System.out.println(Banner);
-            String inMessage;
-            while ((inMessage = in.readLine()) != null){
-                System.out.println(inMessage);
-            }
+
+            Thread t1 = new Thread(inputHandler);
+            Thread t2 = new Thread(inputObjecthandler);
+
+            t1.start();
+            t2.start();
+
 
         }catch (IOException e){
             shutdown();
@@ -47,8 +53,8 @@ public class Client implements Runnable{
     public void shutdown(){
         done = true;
         try {
-            in.close();
-            out.close();
+            bufferedReader.close();
+            bufferedWriter.close();
             if(!client.isClosed()){
                 client.close();
             }
@@ -60,30 +66,64 @@ public class Client implements Runnable{
         }
     }
 
-    class InputHandler implements Runnable{
+    private class OutputHandler implements Runnable{
+
         @Override
         public void run() {
-            Scanner scanner = new Scanner(System.in);
-            String message;
-
+                Scanner scanner = new Scanner(System.in);
+                String message;
                 while (!done) {
                     message = scanner.nextLine();
-                    if(!message.isEmpty()){
-                        sendMessage(message);
+                    if (!message.isEmpty()) {
+                        sendMessage(objectOutputStream,"txt",message);
                     }
+                }
+
+        }
+    }
+
+    private class InputHandler implements Runnable{
+
+        @Override
+        public void run(){
+            try {
+                JSONObject jsonObject;
+                while ( (jsonObject = (JSONObject) objectInputStream.readObject()) != null) {
+
+                        if (jsonObject.get("header").equals("json")) {
+
+                            JSONObject json = (JSONObject) jsonObject.get("body");
+                            for (Object o : json.keySet())
+                                System.out.println(json.get(o));
+
+                        } else if (jsonObject.get("header").equals("txt")) {
+                            System.out.println(jsonObject.get("body"));
+                        }
+                    }
+                }catch(IOException e){
+                    e.printStackTrace();
+                } catch(ClassNotFoundException e){
+                    e.printStackTrace();
                 }
         }
     }
 
-    private void sendMessage(String message){
-        try{
-            out.write(message);
-            out.newLine();
+
+    private void sendMessage(ObjectOutputStream out,String mode, Object body){
+        try {
+            out.writeObject(StreamConfig(mode,body));
             out.flush();
-        }catch (IOException e){
-            e.printStackTrace();
+        }catch(IOException e){
+            System.out.println("client socket closed .");
         }
 
     }
 
+    private JSONObject StreamConfig(String header, Object body){
+
+        JSONObject json = new JSONObject();
+        json.put("header",header);
+        json.put("body",body);
+        return json;
+    }
 }

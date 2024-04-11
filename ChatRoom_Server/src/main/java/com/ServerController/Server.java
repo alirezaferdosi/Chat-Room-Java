@@ -1,7 +1,5 @@
 package com.ServerController;
 
-import org.eclipse.persistence.internal.jaxb.json.schema.model.JsonType;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -59,14 +57,14 @@ public class Server implements Runnable{
         }
     }
 
-    public static class ClientHandler implements Runnable {
+    public static class ClientHandler implements Runnable,Serializable {
 
         private final Socket client;
-        private BufferedReader bufferedReader;
-        private BufferedWriter bufferedWriter;
-        public Boolean login;
-        public String username;
-        public String password;
+        private ObjectOutputStream objectOutputStream;
+        private ObjectInputStream objectInputStream;
+        public static Boolean login;
+        public static String username;
+        public static String password;
 
         public  ClientHandler(Socket client){
             this.client = client;
@@ -77,10 +75,12 @@ public class Server implements Runnable{
         public void run(){
             try {
                 Interaction intraction = new Interaction(client);
-                bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                bufferedWriter = new BufferedWriter((new OutputStreamWriter(client.getOutputStream())));
+                objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                objectInputStream = new ObjectInputStream(client.getInputStream());
 
-                intraction.begin(bufferedReader, bufferedWriter);
+
+                intraction.begin(objectInputStream, objectOutputStream);
+                if(login)   intraction.Menu(objectInputStream,objectOutputStream);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -93,8 +93,9 @@ public class Server implements Runnable{
 
         public void shutdown(){
             try{
-                bufferedReader.close();
-                bufferedWriter.close();
+                objectInputStream.close();
+                objectOutputStream.close();
+
                 if(client.isConnected()){
                     System.out.println("inputhandler shutdown");
                     client.close();
