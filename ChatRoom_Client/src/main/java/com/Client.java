@@ -2,6 +2,7 @@ package com;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Scanner;
 import org.json.simple.JSONObject;
 
@@ -28,7 +29,7 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            client = new Socket("127.0.0.1",15000);
+            client = new Socket("127.0.0.1",16000);
 
             objectInputStream = new ObjectInputStream(client.getInputStream());
             objectOutputStream = new ObjectOutputStream(client.getOutputStream());
@@ -75,7 +76,13 @@ public class Client implements Runnable{
                 while (!done) {
                     message = scanner.nextLine();
                     if (!message.isEmpty()) {
-                        sendMessage(objectOutputStream,"txt",message);
+                        if(message.toLowerCase(Locale.ENGLISH).equals("cls") || message.toLowerCase(Locale.ENGLISH).equals("clear")){
+                            System.out.println("\033[H\033[2J");
+
+                        }else{
+                            sendMessage(objectOutputStream,"txt",message);
+
+                        }
                     }
                 }
 
@@ -94,7 +101,7 @@ public class Client implements Runnable{
 
                             JSONObject json = (JSONObject) jsonObject.get("body");
                             for (Object o : json.keySet())
-                                System.out.println(json.get(o));
+                                System.out.println(o + " : " + json.get(o));
 
                         } else if (jsonObject.get("header").equals("txt")) {
                             System.out.println(jsonObject.get("body"));
@@ -114,7 +121,7 @@ public class Client implements Runnable{
             out.writeObject(StreamConfig(mode,body));
             out.flush();
         }catch(IOException e){
-            System.out.println("client socket closed .");
+            System.out.println("client socket losed .");
         }
 
     }
@@ -125,5 +132,11 @@ public class Client implements Runnable{
         json.put("header",header);
         json.put("body",body);
         return json;
+    }
+
+
+    public static void main(String[] args) {
+        Client client = new Client();
+        client.run();
     }
 }

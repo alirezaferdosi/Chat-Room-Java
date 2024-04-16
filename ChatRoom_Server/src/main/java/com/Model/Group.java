@@ -5,7 +5,9 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "_Group_")
-@NamedQuery(name = "select groups", query = "SELECT g.Id from Group g WHERE g.owner = :user")
+//@NamedQuery(name = "select groups by ", query = "SELECT g.Id from Group g WHERE g. = :user")
+@NamedQuery(name = "all groups", query = "SELECT g.Id FROM Group g")
+@NamedQuery(name = "chack the group admin", query = "SELECT g.Id FROM Group g WHERE g.owner = :O AND g.Id = :id")
 public class Group implements Serializable {
 
     @Id

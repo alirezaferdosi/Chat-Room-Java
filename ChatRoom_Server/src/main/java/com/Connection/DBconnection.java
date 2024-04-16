@@ -28,4 +28,14 @@ public class DBconnection {
         entityManager.close();
         emfactory.close();
     }
+    public void JustEndTransaction(){
+
+        entityManager.getTransaction().commit();
+        entityManager.close();
+        emfactory.close();
+    }
+
+//    public Object find(Object Class,Object key){
+//        return entityManager.getTransaction().find(Class.getClass(),key);
+//    }
 }

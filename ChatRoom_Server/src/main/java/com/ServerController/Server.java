@@ -1,24 +1,40 @@
 package com.ServerController;
 
+
+import javax.management.Query;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.Transaction.Form.GetAllgroups;
 
 public class Server implements Runnable{
     private static Vector<ClientHandler> connection;
     private ServerSocket serverSocket;
     private ExecutorService pool;
     private boolean done;
-
     private final Integer PORT;
+    public static Map<Long, ArrayList<String>> OnlineOnGroup;
 
     public Server(Integer PORT){
         this.PORT = PORT;
         done = false;
         connection = new Vector<>();
+        OnlineOnGroup = new HashMap<>();
+
+        for(Object o: GetAllgroups()){
+            OnlineOnGroup.put((Long) o,new ArrayList<>());
+        }
+    }
+
+    public static Vector get_Condition(){
+        return connection;
     }
 
     @Override
@@ -65,11 +81,15 @@ public class Server implements Runnable{
         public static Boolean login;
         public static String username;
         public static String password;
+        public static Condition condition;
+
 
         public  ClientHandler(Socket client){
             this.client = client;
             login = false;
+            condition = new Condition();
         }
+
 
         @Override
         public void run(){
@@ -79,8 +99,8 @@ public class Server implements Runnable{
                 objectInputStream = new ObjectInputStream(client.getInputStream());
 
 
-                intraction.begin(objectInputStream, objectOutputStream);
-                if(login)   intraction.Menu(objectInputStream,objectOutputStream);
+                intraction.Begin(objectInputStream, objectOutputStream);
+                if(login)   intraction.Home(objectInputStream,objectOutputStream);
 
             } catch (IOException e) {
                 e.printStackTrace();
