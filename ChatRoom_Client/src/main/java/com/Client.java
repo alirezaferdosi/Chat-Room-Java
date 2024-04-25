@@ -1,3 +1,5 @@
+package com;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Locale;
@@ -75,7 +77,15 @@ public class Client implements Runnable{
                     message = scanner.nextLine();
                     if (!message.isEmpty()) {
                         if(message.toLowerCase(Locale.ENGLISH).equals("cls") || message.toLowerCase(Locale.ENGLISH).equals("clear")){
-                            System.out.println("\033[H\033[2J");
+                            String[] commandList = {"powershell.exe", "-Command", "cls"};
+
+                            ProcessBuilder pb = new ProcessBuilder(commandList);
+
+                            try {
+                                Process p = pb.start();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
 
                         }else{
                             sendMessage(objectOutputStream,"txt",message);
