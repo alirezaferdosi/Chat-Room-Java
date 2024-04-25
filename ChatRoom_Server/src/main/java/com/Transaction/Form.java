@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.Connection.DBconnection.getInstance;
 import static com.ServerController.Server.OnlineOnGroup;
+import static com.ServerController.Server.get_Condition;
 
 public class Form implements Serializable {
     private User user;
@@ -66,7 +67,7 @@ public class Form implements Serializable {
         getInstance().EndTransaction(member);
 
         Long id =  group.getId();
-
+        OnlineOnGroup.put(id,null);
         try {
             Files.createFile(Paths.get("src/Group/" + id + ".txt"));
             return id;
@@ -89,9 +90,9 @@ public class Form implements Serializable {
         member.setGroup(group);
         member.setUser(user);
         getInstance().EndTransaction(member);
-        System.out.println("----------------"+member.getId());
 
         Long id =  group.getId();
+        OnlineOnGroup.put(id,null);
 
         try {
             Files.createFile(Paths.get("src/Group/" + id + ".txt"));

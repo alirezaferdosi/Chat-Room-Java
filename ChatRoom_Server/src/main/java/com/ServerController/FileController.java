@@ -1,15 +1,9 @@
 package com.ServerController;
 
-import org.eclipse.persistence.internal.oxm.record.json.JsonParserReader;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
-import java.nio.charset.StandardCharsets;
 
 
 public class FileController {
@@ -54,17 +48,14 @@ public class FileController {
 
         try {
             bufferedReader = new BufferedReader(new FileReader(filename));
-            String str = "",line;
-            System.out.println("____________");
+            String str = "";
+            String line;
 
             while(((line = bufferedReader.readLine()) != null)){
                 str += line + "\n";
             }
             bufferedReader.close();
             return str;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return "";
         } catch (IOException e) {
             e.printStackTrace();
             return "";

@@ -1,5 +1,3 @@
-package com;
-
 import java.io.*;
 import java.net.Socket;
 import java.util.Locale;
@@ -8,11 +6,6 @@ import org.json.simple.JSONObject;
 
 
 public class Client implements Runnable{
-    private String Banner = "   ________          __     ____                      \n" +
-            "  / ____/ /_  ____ _/ /_   / __ \\____  ____  ____ ___ \n" +
-            " / /   / __ \\/ __ `/ __/  / /_/ / __ \\/ __ \\/ __ `__ \\\n" +
-            "/ /___/ / / / /_/ / /_   / _, _/ /_/ / /_/ / / / / / /\n" +
-            "\\____/_/ /_/\\__,_/\\__/  /_/ |_|\\____/\\____/_/ /_/ /_/     ";
 
     private Socket client;
     private BufferedReader bufferedReader;
@@ -37,7 +30,12 @@ public class Client implements Runnable{
             OutputHandler inputHandler = new OutputHandler();
             InputHandler inputObjecthandler = new InputHandler();
 
-            System.out.println(Banner);
+            String banner = "   ________          __     ____                      \n" +
+                    "  / ____/ /_  ____ _/ /_   / __ \\____  ____  ____ ___ \n" +
+                    " / /   / __ \\/ __ `/ __/  / /_/ / __ \\/ __ \\/ __ `__ \\\n" +
+                    "/ /___/ / / / /_/ / /_   / _, _/ /_/ / /_/ / / / / / /\n" +
+                    "\\____/_/ /_/\\__,_/\\__/  /_/ |_|\\____/\\____/_/ /_/ /_/     ";
+            System.out.println(banner);
 
             Thread t1 = new Thread(inputHandler);
             Thread t2 = new Thread(inputObjecthandler);
@@ -107,9 +105,7 @@ public class Client implements Runnable{
                             System.out.println(jsonObject.get("body"));
                         }
                     }
-                }catch(IOException e){
-                    e.printStackTrace();
-                } catch(ClassNotFoundException e){
+                }catch(IOException | ClassNotFoundException e){
                     e.printStackTrace();
                 }
         }
@@ -135,8 +131,8 @@ public class Client implements Runnable{
     }
 
 
-    public static void main(String[] args) {
-        Client client = new Client();
-        client.run();
-    }
+//    public static void main(String[] args) {
+//        Client client = new Client();
+//        client.run();
+//    }
 }

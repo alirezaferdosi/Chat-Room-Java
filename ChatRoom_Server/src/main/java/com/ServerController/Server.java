@@ -1,21 +1,21 @@
 package com.ServerController;
 
 
-import javax.management.Query;
+import org.json.simple.JSONObject;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.Transaction.Form.GetAllgroups;
 
 public class Server implements Runnable{
-    private static Vector<ClientHandler> connection;
+    private static Map<ClientHandler,String> connection;
     private ServerSocket serverSocket;
     private ExecutorService pool;
     private boolean done;
@@ -25,7 +25,7 @@ public class Server implements Runnable{
     public Server(Integer PORT){
         this.PORT = PORT;
         done = false;
-        connection = new Vector<>();
+        connection = new HashMap<>();
         OnlineOnGroup = new HashMap<>();
 
         for(Object o: GetAllgroups()){
@@ -33,7 +33,7 @@ public class Server implements Runnable{
         }
     }
 
-    public static Vector get_Condition(){
+    public static Map get_Condition(){
         return connection;
     }
 
@@ -46,7 +46,7 @@ public class Server implements Runnable{
             while(!done){
                 Socket socket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(socket);
-                connection.add(handler);
+                connection.put(handler,"");
                 pool.execute(handler);
             }
         }catch(IOException e){
@@ -63,7 +63,7 @@ public class Server implements Runnable{
                 serverSocket.close();
             }
 
-            for(ClientHandler ch: connection){
+            for(ClientHandler ch: connection.keySet()){
                 System.out.println("server shutdown");
                 ch.shutdown();
                 System.exit(1);
@@ -83,13 +83,15 @@ public class Server implements Runnable{
         public static String password;
         public static Condition condition;
 
-
         public  ClientHandler(Socket client){
             this.client = client;
             login = false;
             condition = new Condition();
         }
 
+        public ClientHandler getthisClient(){
+            return this;
+        }
 
         @Override
         public void run(){
@@ -98,8 +100,8 @@ public class Server implements Runnable{
                 objectOutputStream = new ObjectOutputStream(client.getOutputStream());
                 objectInputStream = new ObjectInputStream(client.getInputStream());
 
-
                 intraction.Begin(objectInputStream, objectOutputStream);
+                connection.put(this,username);
                 if(login)   intraction.Home(objectInputStream,objectOutputStream);
 
             } catch (IOException e) {
@@ -127,6 +129,19 @@ public class Server implements Runnable{
                 System.out.println("value not found");
             }
 
+        }
+
+        public void Send(String header, String body){
+            JSONObject json = new JSONObject();
+            json.put("header",header);
+            json.put("body",body);
+
+            try {
+                objectOutputStream.writeObject(json);
+                objectOutputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -2,8 +2,6 @@ package com.ServerController;
 
 import org.json.simple.JSONObject;
 
-import java.util.Locale;
-
 public class Condition {
     private JSONObject json;
 
@@ -34,16 +32,16 @@ public class Condition {
     }
 
     public void setGroup(String value){
-        json.put("home", null);
-        json.put("chat", null);
+        json.put("home", "");
+        json.put("chat", "");
         json.put("group", value);
 
     }
 
     public void setChat(String value){
-        json.put("home", null);
+        json.put("home", "");
         json.put("chat", value);
-        json.put("group", null);
+        json.put("group", "");
 
     }
 }

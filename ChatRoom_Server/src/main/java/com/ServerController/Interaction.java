@@ -64,7 +64,7 @@ public class Interaction implements Serializable {
                                         if (form.Login(username, password)) {
                                             login = true;
                                             flag = false;
-
+                                            get_Condition().put(ch.getthisClient(),username);
                                             sendMessage(output, "txt", "You entered");
                                             System.out.println(username + " entered");
 
@@ -152,6 +152,126 @@ public class Interaction implements Serializable {
 
     }
 
+    private void Decode(String M, ObjectOutputStream output, ObjectInputStream input) {
+        String name = get_username();
+
+        if (Checker(0, M).find(0)) {
+            matcher = Checker(0, M);
+            matcher.find(0);
+            form.CreateGroup(matcher.group(3), username, matcher.group(4));
+            sendMessage(output, "txt", "group created");
+
+        }// create the group
+        else if (Checker(1, M).find(0)) {
+            matcher = Checker(1, M);
+            matcher.find(0);
+            form.CreateGroup(matcher.group(3), username);
+            sendMessage(output, "txt", "group created");
+
+        }// create the group
+        else if (Checker(2, M).find(0)) {
+            matcher = Checker(2, M);
+            matcher.find(0);
+            sendMessage(output, "txt", form.AddMemeber(matcher.group(3), matcher.group(4)));
+        }// add Member to the group
+        else if (Checker(3, M).find(0)) {//remove user from group
+            matcher = Checker(3, M);
+            matcher.find(0);
+            sendMessage(output, "txt", form.RemoveUser(matcher.group(3), matcher.group(4)));
+        }
+//            else if(Checker(4,M).find(0)){
+//
+//            }
+//            else if(Checker(5,M).find(0)){
+//
+//            }
+        else if (Checker(6, M).find(0)) {
+            matcher = Checker(6, M);
+            matcher.find(0);
+
+            if (dataCheck.GroupExist(Long.parseLong(matcher.group(3)))) {
+                Long gid = Long.parseLong(matcher.group(3));
+
+                if (!condition.getGroup().equals(gid) && form.Membership(form.FindObject(new User(),name), form.FindObject(new Group(), gid))) {
+                    form.OnlineOnGroup(name,gid);
+                    sendMessage(output, "txt", fileController.ReadFromGroup(String.valueOf(gid)));
+                    condition.setChat(String.valueOf(gid));
+                    Group(input,output,gid);
+
+                } else {
+                    sendMessage(output, "txt", "You can't enter");
+                }
+
+            } else {
+                sendMessage(output, "txt", "group does not exist");
+            }
+
+        }// enter the group
+        else if (Checker(12, M).find(0)) {
+            matcher = Checker(12, M);
+            matcher.find(0);
+            sendMessage(output, "txt", Manual(""));
+
+        }//give the manual
+        else if (Checker(13, M).find(0)) {
+            matcher = Checker(13, M);
+            matcher.find(0);
+            sendMessage(output, "txt", Manual(matcher.group(2)));
+
+        }//give the specific manual
+        else if (Checker(14, M).find(0)) {
+            matcher = Checker(14, M);
+            matcher.find(0);
+            sendMessage(output, "json", form.GetGroup(username));
+
+        }// get list of group
+        else {
+            if (condition.getHome().equals("home")) {
+                sendMessage(output, "txt", "command " + M + " does not exist ");
+            }
+        }
+    }
+
+    private void Group(ObjectInputStream input, ObjectOutputStream output, Long group){
+        form.OnlineOnGroup(username,group);
+        String name = get_username();
+
+        JSONObject json;
+        try {
+            sendMessage(output,"txt","welcome to our group " + name);
+            while ((json = (JSONObject) input.readObject()) != null) {
+
+                if (json.get("header").equals("json")) {}
+
+                if(Checker(15, (String) json.get("body")).find(0)){
+                    condition.setHome("home");
+                    System.out.println(OnlineOnGroup.get(group));
+                    OnlineOnGroup.get(group).remove(username);
+                    System.out.println(OnlineOnGroup.get(group));
+                    break;
+                }
+                else{
+                    broadcast(name + " >>>" + json.get("body"),group);
+                    fileController.WriteToGroup(name + " : " + json.get("body"), String.valueOf(group));
+                }
+
+            }
+        } catch(IOException | ClassNotFoundException e){
+            e.printStackTrace();
+        }
+    }
+
+    private void broadcast(String message, Long group){
+        for (Object o1: get_Condition().keySet()) {
+            Server.ClientHandler client = (Server.ClientHandler) o1;
+            for(String o2: OnlineOnGroup.get(group)) {
+                if (get_Condition().get(client).equals(username) && o2.equals(get_Condition().get(client))) {
+                    ch.Send("txt",message);
+                }
+            }
+        }
+    }
+
     public String Manual(String command) {
         String item1, item2;
         item1 = "NAME\n" +
@@ -207,7 +327,7 @@ public class Interaction implements Serializable {
         }
     }
 
-    private void sendMessage(ObjectOutputStream out, String header, Object body) {
+    private void sendMessage(ObjectOutputStream out, String header, Serializable body) {
         try {
             out.writeObject(StreamConfig(header, body));
             out.flush();
@@ -219,7 +339,7 @@ public class Interaction implements Serializable {
 
     }
 
-    private JSONObject StreamConfig(String header, Object body) {
+    private JSONObject StreamConfig(String header, Serializable body) {
 
         JSONObject json = new JSONObject();
         json.put("header", header);
@@ -227,114 +347,9 @@ public class Interaction implements Serializable {
         return json;
     }
 
-    private void Decode(String M, ObjectOutputStream output, ObjectInputStream input) {
-
-        if (Checker(0, M).find(0)) {
-            matcher = Checker(0, M);
-            matcher.find(0);
-            form.CreateGroup(matcher.group(3), username, matcher.group(4));
-            sendMessage(output, "txt", "group created");
-
-        }// create the group
-        else if (Checker(1, M).find(0)) {
-            matcher = Checker(1, M);
-            matcher.find(0);
-            form.CreateGroup(matcher.group(3), username);
-            sendMessage(output, "txt", "group created");
-
-        }// create the group
-        else if (Checker(2, M).find(0)) {
-            matcher = Checker(2, M);
-            matcher.find(0);
-            sendMessage(output, "txt", form.AddMemeber(matcher.group(3), matcher.group(4)));
-        }// add Member to the group
-        else if (Checker(3, M).find(0)) {//remove user from group
-            matcher = Checker(3, M);
-            matcher.find(0);
-            sendMessage(output, "txt", form.RemoveUser(matcher.group(3), matcher.group(4)));
-        }
-//            else if(Checker(4,M).find(0)){
-//
-//            }
-//            else if(Checker(5,M).find(0)){
-//
-//            }
-        else if (Checker(6, M).find(0)) {
-            matcher = Checker(6, M);
-            matcher.find(0);
-
-            if (dataCheck.GroupExist(Long.parseLong(matcher.group(3)))) {
-                Long gid = Long.parseLong(matcher.group(3));
-                if (!condition.getGroup().equals(gid) && form.Membership(form.FindObject(new User(), username), form.FindObject(new Group(), gid))) {
-                    Group(input,output,gid);
-                    sendMessage(output, "txt", fileController.ReadFromGroup(String.valueOf(gid)));
-                    condition.setChat(String.valueOf(gid));
-                } else {
-                    sendMessage(output, "txt", "You can't enter");
-                }
-
-            } else {
-                sendMessage(output, "txt", "group does not exist");
-            }
-        }// enter the group
-        else if (Checker(12, M).find(0)) {
-            matcher = Checker(12, M);
-            matcher.find(0);
-            sendMessage(output, "txt", Manual(""));
-        }//give the manual
-        else if (Checker(13, M).find(0)) {
-            matcher = Checker(13, M);
-            matcher.find(0);
-            sendMessage(output, "txt", Manual(matcher.group(2)));
-        }//give the specific manual
-        else if (Checker(14, M).find(0)) {
-            matcher = Checker(14, M);
-            matcher.find(0);
-            sendMessage(output, "json", form.GetGroup(username));
-        }// get list of group
-        else {
-            if (condition.getHome().equals("home")) {
-                sendMessage(output, "txt", "command " + M + " does not exist ");
-            }
-        }
+    private String get_username(){
+        return (String) get_Condition().get(ch.getthisClient());
     }
-
-    private void Group(ObjectInputStream input, ObjectOutputStream output, Long group){
-        form.OnlineOnGroup(username,group);
-
-        JSONObject json;
-        try {
-            sendMessage(output,"txt","welcome to our group " + username);
-            while ((json = (JSONObject) input.readObject()) != null) {
-
-                if (json.get("header").equals("json")) {}
-
-                if(Checker(15, (String) json.get("body")).find(0)){
-                    condition.setHome("home");
-                    System.out.println(OnlineOnGroup.get(group));
-                    OnlineOnGroup.get(group).remove(username);
-                    System.out.println(OnlineOnGroup.get(group));
-                    break;
-                }
-                else broadcast(output,input,username + " >>>" +(String) json.get("body"),group);
-
-            }
-        } catch(IOException | ClassNotFoundException e){
-            e.printStackTrace();
-        }
-    }
-
-    private void broadcast(ObjectOutputStream output, ObjectInputStream input, String message, Long group){
-        for (Object o1: get_Condition()) {
-            Server.ClientHandler client = (Server.ClientHandler) o1;
-            for(String o2: OnlineOnGroup.get(group)) {
-                if (client.username.equals(username) && o2.equals(client.username)) {
-                    sendMessage(output,"txt",message);
-                }
-            }
-        }
-    }
-
 }
 
 
