@@ -1,7 +1,6 @@
 package com.Transaction;
 
 import com.Model.*;
-import com.ServerController.Server;
 import org.json.simple.JSONObject;
 
 import javax.persistence.Query;
@@ -14,7 +13,6 @@ import java.util.List;
 
 import static com.Connection.DBconnection.getInstance;
 import static com.ServerController.Server.OnlineOnGroup;
-import static com.ServerController.Server.get_Condition;
 
 public class Form implements Serializable {
     private User user;
@@ -103,13 +101,13 @@ public class Form implements Serializable {
         }
     }
 
-    public String AddMemeber(String user, String group){
-        User A = getInstance().entityManager.find(User.class,Server.ClientHandler.username);
+    public String AddMemeber(String user, Long group, String admin){
+        User A = getInstance().entityManager.find(User.class,admin);
         User u = getInstance().entityManager.find(User.class,user);
-        Group g = getInstance().entityManager.find(Group.class, Long.parseLong(group));
+        Group g = getInstance().entityManager.find(Group.class, group);
 
         if(Isadmin(A,g)) return "you are not admin";
-        if (!Membership(u, g)) {
+        if (!Membership(user, group)) {
             Member member = new Member();
             member.setUser(u);
             member.setGroup(g);
@@ -119,25 +117,30 @@ public class Form implements Serializable {
 
     }
 
-    public String RemoveUser (String user, String group){
-        User A = getInstance().entityManager.find(User.class,Server.ClientHandler.username);
+    public String RemoveUser (String user, Long group, String admin){
+        User A = getInstance().entityManager.find(User.class,admin);
         User u = getInstance().entityManager.find(User.class,user);
-        Group g = getInstance().entityManager.find(Group.class,Long.parseLong(group));
+        Group g = getInstance().entityManager.find(Group.class,group);
 
         if(Isadmin(A,g)) return "you are not admin";
-        if (Membership(u,g)) {
-                Query query = getInstance().entityManager.createNamedQuery("Checking whether a user is a member");
-                query.setParameter("u", u);
-                query.setParameter("g", g);
-                query = getInstance().entityManager.createNamedQuery("delete record");
-                query.setParameter("g",g);
-                query.setParameter("u",u);
-                query.executeUpdate();
-                return user + " removed";
+        if (Membership(user,group)) {
+                Query query1 = getInstance().entityManager.createNamedQuery("Checking whether a user is a member");
+                query1.setParameter("u", u);
+                query1.setParameter("g", g);
+                List list = query1.getResultList();
+                for (Object id: list){
+                    Member member =getInstance().entityManager.find(Member.class,id);
+                    getInstance().entityManager.remove(member);
+                    getInstance().JustEndTransaction();
+                    return user + " removed";
+                }
+                return "you can't remove this user";
             } else return user + " is not in the group";
         }
 
-    public Boolean Membership (User user, Group group){
+    public Boolean Membership (String username, Long groupid){
+            User user = getInstance().entityManager.find(User.class,username);
+            Group group = getInstance().entityManager.find(Group.class,groupid);
             Query query = getInstance().entityManager.createNamedQuery("Checking whether a user is a member");
             query.setParameter("u", user);
             query.setParameter("g", group);
@@ -148,20 +151,10 @@ public class Form implements Serializable {
     }
 
     private Boolean Isadmin(User user, Group group){
-
-
         Query query = getInstance().entityManager.createNamedQuery("chack the group admin");
         query.setParameter("O",user);
         query.setParameter("id",group.getId());
         return query.getResultList().isEmpty();
-    }
-
-    public User FindObject(User object, String input){
-        return getInstance().entityManager.find(object.getClass(),input);
-    }
-
-    public Group FindObject(Group object, Long input){
-        return getInstance().entityManager.find(object.getClass(),input);
     }
 
     public static List GetAllgroups(){

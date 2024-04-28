@@ -1,9 +1,8 @@
 package com.ServerController;
 
+import com.Datareview.Command;
 import com.Datareview.DataCheck;
 import com.Datareview.PatternCheck;
-import com.Model.Group;
-import com.Model.User;
 import com.Transaction.Form;
 import org.json.simple.JSONObject;
 
@@ -13,9 +12,8 @@ import java.util.Locale;
 import java.util.regex.*;
 
 import static com.Datareview.Command.*;
+import static com.ServerController.Server.*;
 import static com.ServerController.Server.ClientHandler.*;
-import static com.ServerController.Server.OnlineOnGroup;
-import static com.ServerController.Server.get_Condition;
 
 
 public class Interaction implements Serializable {
@@ -27,6 +25,7 @@ public class Interaction implements Serializable {
     private DataCheck dataCheck;
     private Boolean flag = true;
     private FileController fileController;
+    private String localusername;
 
     public Interaction(Socket client) {
         this.client = client;
@@ -48,7 +47,7 @@ public class Interaction implements Serializable {
                 if (!json.get("header").equals("txt")) return;
 
                 begin = (String) json.get("body");
-                matcher = Checker(7, begin);
+                matcher = Checker(16, begin);
                 if (matcher.find(0)) {
 
                     username = matcher.group(2);
@@ -62,9 +61,17 @@ public class Interaction implements Serializable {
                                 if (patternCheck.PasswrodCheck(password)) {
                                     if (dataCheck.UserExist(username)) {
                                         if (form.Login(username, password)) {
+                                            if(getClient(username) != null) {
+                                                sendMessage(getClient(username).objectOutputStream,"txt","You are kicked out");
+                                                getClient(username).shutdown();
+                                                getClient(username).removeClient();
+                                            }
                                             login = true;
                                             flag = false;
-                                            get_Condition().put(ch.getthisClient(),username);
+                                            localusername = username;
+                                            conditionMap.put(ch.getthisClient(),new Condition());
+                                            conditionMap.get(ch.getthisClient()).setHome("home");
+                                            connection.put(ch.getthisClient(),username);
                                             sendMessage(output, "txt", "You entered");
                                             System.out.println(username + " entered");
 
@@ -125,10 +132,8 @@ public class Interaction implements Serializable {
                 }
             }
 
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             ch.shutdown();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 
@@ -144,47 +149,37 @@ public class Interaction implements Serializable {
                 Decode(body, output, input);
 
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("input not found");
             e.printStackTrace();
         }
 
     }
 
     private void Decode(String M, ObjectOutputStream output, ObjectInputStream input) {
-        String name = get_username();
-
+        String name = localusername;
         if (Checker(0, M).find(0)) {
             matcher = Checker(0, M);
             matcher.find(0);
             form.CreateGroup(matcher.group(3), username, matcher.group(4));
             sendMessage(output, "txt", "group created");
-
         }// create the group
         else if (Checker(1, M).find(0)) {
             matcher = Checker(1, M);
             matcher.find(0);
             form.CreateGroup(matcher.group(3), username);
             sendMessage(output, "txt", "group created");
-
         }// create the group
         else if (Checker(2, M).find(0)) {
             matcher = Checker(2, M);
             matcher.find(0);
-            sendMessage(output, "txt", form.AddMemeber(matcher.group(3), matcher.group(4)));
+            sendMessage(output, "txt", form.AddMemeber(matcher.group(3), Long.valueOf(matcher.group(4)), localusername));
         }// add Member to the group
-        else if (Checker(3, M).find(0)) {//remove user from group
+        else if (Checker(3, M).find(0)) {
             matcher = Checker(3, M);
             matcher.find(0);
-            sendMessage(output, "txt", form.RemoveUser(matcher.group(3), matcher.group(4)));
-        }
-//            else if(Checker(4,M).find(0)){
-//
-//            }
-//            else if(Checker(5,M).find(0)){
-//
-//            }
+            sendMessage(output, "txt", form.RemoveUser(matcher.group(3), Long.parseLong(matcher.group(4)),localusername));
+        }// remove user from group
         else if (Checker(6, M).find(0)) {
             matcher = Checker(6, M);
             matcher.find(0);
@@ -192,12 +187,8 @@ public class Interaction implements Serializable {
             if (dataCheck.GroupExist(Long.parseLong(matcher.group(3)))) {
                 Long gid = Long.parseLong(matcher.group(3));
 
-                if (!condition.getGroup().equals(gid) && form.Membership(form.FindObject(new User(),name), form.FindObject(new Group(), gid))) {
-                    form.OnlineOnGroup(name,gid);
-                    sendMessage(output, "txt", fileController.ReadFromGroup(String.valueOf(gid)));
-                    condition.setChat(String.valueOf(gid));
+                if (conditionMap.get(getClient(name)).getGroup() != gid && form.Membership(name,gid)) {
                     Group(input,output,gid);
-
                 } else {
                     sendMessage(output, "txt", "You can't enter");
                 }
@@ -206,70 +197,145 @@ public class Interaction implements Serializable {
                 sendMessage(output, "txt", "group does not exist");
             }
 
-        }// enter the group
-        else if (Checker(12, M).find(0)) {
-            matcher = Checker(12, M);
-            matcher.find(0);
-            sendMessage(output, "txt", Manual(""));
-
-        }//give the manual
-        else if (Checker(13, M).find(0)) {
-            matcher = Checker(13, M);
-            matcher.find(0);
-            sendMessage(output, "txt", Manual(matcher.group(2)));
-
-        }//give the specific manual
-        else if (Checker(14, M).find(0)) {
-            matcher = Checker(14, M);
+        }// enter to the group
+        else if (Checker(8, M).find(0)) {
+            matcher = Checker(8, M);
             matcher.find(0);
             sendMessage(output, "json", form.GetGroup(username));
 
         }// get list of group
+        else if (Checker(12, M).find(0)){
+            matcher = Checker(12,M);
+            matcher.find(0);
+
+            if(dataCheck.UserExist(matcher.group(3))){
+                Chat(input,output, matcher.group(3));
+            }else {
+                sendMessage(output,"txt","User not found");
+            }
+        }// enter to the chat
+        else if (Checker(14, M).find(0)) {
+            matcher = Checker(14, M);
+            matcher.find(0);
+            sendMessage(output, "txt", Manual(""));
+
+        }// give the manual
+        else if (Checker(15, M).find(0)) {
+            matcher = Checker(15, M);
+            matcher.find(0);
+            sendMessage(output, "txt", Manual(matcher.group(2)));
+
+        }// give the specific manual
+        else if (Checker(17, M).find(0)){
+            sendMessage(getClient(localusername).objectOutputStream,"txt","you log out");
+            getClient(localusername).shutdown();
+            getClient(localusername).removeClient();
+        }// Log out from application
         else {
-            if (condition.getHome().equals("home")) {
+            if (conditionMap.get(getClient(name)).getHome().equals("home")) {
                 sendMessage(output, "txt", "command " + M + " does not exist ");
             }
         }
     }
 
     private void Group(ObjectInputStream input, ObjectOutputStream output, Long group){
-        form.OnlineOnGroup(username,group);
-        String name = get_username();
+        form.OnlineOnGroup(localusername,group);
+
+        sendMessage(output,"txt","welcome to our group " + localusername);
+        sendMessage(output, "txt", fileController.ReadFromGroup(String.valueOf(group)));
+        conditionMap.get(getClient(localusername)).setGroup(group);
 
         JSONObject json;
         try {
-            sendMessage(output,"txt","welcome to our group " + name);
             while ((json = (JSONObject) input.readObject()) != null) {
 
                 if (json.get("header").equals("json")) {}
 
-                if(Checker(15, (String) json.get("body")).find(0)){
-                    condition.setHome("home");
-                    System.out.println(OnlineOnGroup.get(group));
-                    OnlineOnGroup.get(group).remove(username);
-                    System.out.println(OnlineOnGroup.get(group));
+                if(Checker(7, (String) json.get("body")).find(0)){
+                    sendMessage(output,"txt","you exit");
+                    conditionMap.get(getClient(localusername)).setHome("home");
+                    OnlineOnGroup.get(group).remove(localusername);
                     break;
                 }
                 else{
-                    broadcast(name + " >>>" + json.get("body"),group);
-                    fileController.WriteToGroup(name + " : " + json.get("body"), String.valueOf(group));
+                    broadcast(localusername + ": " + json.get("body"),group);
+                    fileController.WriteToGroup(localusername + ": " + json.get("body"), String.valueOf(group));
                 }
 
             }
         } catch(IOException | ClassNotFoundException e){
+            System.err.println("error from client");
+            e.printStackTrace();
+        }
+    }
+
+    private void Chat(ObjectInputStream input,ObjectOutputStream output, String username){
+        conditionMap.get(getClient(localusername)).setChat(username);
+        sendMessage(output,"txt",fileController.ReadfromChat(localusername,username));
+        JSONObject json;
+        try{
+            while((json = (JSONObject) input.readObject()) != null){
+                if(!json.get("header").equals("json")){}
+                if(Checker(13, (String) json.get("body")).find(0)){
+                    sendMessage(output,"txt","you exit");
+                    conditionMap.get(getClient(localusername)).setHome("home");
+                    break;
+                }
+                else{
+                    if(getClient(username) != null && conditionMap.get(getClient(username)).getChat().equals(localusername)){
+                        sendMessage(getClient(username).objectOutputStream,"txt",(String)json.get("body"));
+                        fileController.WriteToChat((String) json.get("body"),localusername,username);
+                    }
+                    else {
+                        fileController.WriteToChat((String) json.get("body"),localusername,username);
+                    }
+                }
+
+            }
+        }catch(IOException | ClassNotFoundException e){
+            System.err.println("error from client");
             e.printStackTrace();
         }
     }
 
     private void broadcast(String message, Long group){
-        for (Object o1: get_Condition().keySet()) {
-            Server.ClientHandler client = (Server.ClientHandler) o1;
-            for(String o2: OnlineOnGroup.get(group)) {
-                if (get_Condition().get(client).equals(username) && o2.equals(get_Condition().get(client))) {
-                    ch.Send("txt",message);
+        for(String o1: OnlineOnGroup.get(group)) {
+            for(Object o2: get_Connection().keySet()){
+                Server.ClientHandler client = (Server.ClientHandler) o2;
+                if (!get_Connection().get(client).equals(localusername) && o1.equals(get_Connection().get(client))) {
+                    sendMessage(client.objectOutputStream,"txt",message);
+                    break;
                 }
             }
+
         }
+    }
+
+    private void sendMessage(ObjectOutputStream out, String header, Serializable body) {
+        try {
+            out.writeObject(StreamConfig(header, body));
+            out.flush();
+        } catch (IOException e) {
+            ch.removeClient();
+            ch.shutdown();
+            System.out.println("client socket closed .");
+        }
+
+    }
+
+    private JSONObject StreamConfig(String header, Serializable body) {
+
+        JSONObject json = new JSONObject();
+        json.put("header", header);
+        json.put("body", body);
+        return json;
+    }
+
+    private ClientHandler getClient(String username){
+        for(ClientHandler o:connection.keySet()){
+            if((connection.get(o).equals(username))) return o;
+        }
+        return null;
     }
 
     public String Manual(String command) {
@@ -303,14 +369,15 @@ public class Interaction implements Serializable {
                 "      Edit  [-U] [username]\n" +
                 "      Edit  [-B] [biography]\n" +
                 "      Edit  [-P] [password]\n" +
-                "      Chat  [username]\n" +
+                "      Chat  [-EN] [username]\n" +
+                "      Chat  [-EX]\n" +
                 "DESCRIPTION\n" +
                 "       Registration   ->  create account\n" +
                 "       Login    -> login to the account\n" +
                 "       -U   ->   edit usernamen\n" +
                 "       -B   ->   edit biography\n" +
-                "       -P   ->   adit password\n";
-
+                "       -P   ->   adit password\n" +
+                "       -Ex ->   Exit form Chat\n";
 
         switch (command.toLowerCase(Locale.ENGLISH)) {
             case "group":
@@ -327,29 +394,6 @@ public class Interaction implements Serializable {
         }
     }
 
-    private void sendMessage(ObjectOutputStream out, String header, Serializable body) {
-        try {
-            out.writeObject(StreamConfig(header, body));
-            out.flush();
-        } catch (IOException e) {
-            ch.removeClient();
-            ch.shutdown();
-            System.out.println("client socket closed .");
-        }
-
-    }
-
-    private JSONObject StreamConfig(String header, Serializable body) {
-
-        JSONObject json = new JSONObject();
-        json.put("header", header);
-        json.put("body", body);
-        return json;
-    }
-
-    private String get_username(){
-        return (String) get_Condition().get(ch.getthisClient());
-    }
 }
 
 

@@ -1,0 +1,16 @@
+hello alireza
+hello u
+how can i help you?
+exit
+exit
+yes
+hello alireza
+hello u
+how are you?
+thanks alireza
+exit
+exit
+exit
+group -ex
+u
+u

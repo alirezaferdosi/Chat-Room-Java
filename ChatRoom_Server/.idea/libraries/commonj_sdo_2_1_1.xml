@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="commonj.sdo-2.1.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/commonj.sdo/2.1.1/commonj.sdo-2.1.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/eclipselink/2.7.9/eclipselink-2.7.9.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/jakarta.persistence/2.2.3/jakarta.persistence-2.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/org.eclipse.persistence.asm/9.1.0/org.eclipse.persistence.asm-9.1.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/org.eclipse.persistence.core/3.0.2/org.eclipse.persistence.core-3.0.2.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/org.eclipse.persistence.jpa/3.0.2/org.eclipse.persistence.jpa-3.0.2.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/eclipse/persistence/org.eclipse.persistence.jpa.jpql/3.0.2/org.eclipse.persistence.jpa.jpql-3.0.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

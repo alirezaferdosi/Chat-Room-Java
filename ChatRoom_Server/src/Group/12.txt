@@ -1,0 +1,9 @@
+group 12
+alireza: hello
+u: hello alirez
+u: alireza *
+u: exitu: group -ex
+u: group -l
+taha: hello every body .i'am taha
+alireza: hello taha
+taha: hello alireza

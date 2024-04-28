@@ -15,25 +15,27 @@ import java.util.concurrent.Executors;
 import static com.Transaction.Form.GetAllgroups;
 
 public class Server implements Runnable{
-    private static Map<ClientHandler,String> connection;
+    public static Map<ClientHandler,String> connection;
+    public static Map<Long, ArrayList<String>> OnlineOnGroup;
+    public static Map<ClientHandler, Condition>  conditionMap;
     private ServerSocket serverSocket;
     private ExecutorService pool;
     private boolean done;
     private final Integer PORT;
-    public static Map<Long, ArrayList<String>> OnlineOnGroup;
+    static ClientHandler object;
 
     public Server(Integer PORT){
         this.PORT = PORT;
         done = false;
         connection = new HashMap<>();
         OnlineOnGroup = new HashMap<>();
-
+        conditionMap = new HashMap<>();
         for(Object o: GetAllgroups()){
             OnlineOnGroup.put((Long) o,new ArrayList<>());
         }
     }
 
-    public static Map get_Condition(){
+    public static Map get_Connection(){
         return connection;
     }
 
@@ -46,6 +48,7 @@ public class Server implements Runnable{
             while(!done){
                 Socket socket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(socket);
+                object = handler;
                 connection.put(handler,"");
                 pool.execute(handler);
             }
@@ -76,21 +79,19 @@ public class Server implements Runnable{
     public static class ClientHandler implements Runnable,Serializable {
 
         private final Socket client;
-        private ObjectOutputStream objectOutputStream;
-        private ObjectInputStream objectInputStream;
+        public ObjectOutputStream objectOutputStream;
+        public ObjectInputStream objectInputStream;
         public static Boolean login;
         public static String username;
         public static String password;
-        public static Condition condition;
 
         public  ClientHandler(Socket client){
             this.client = client;
             login = false;
-            condition = new Condition();
         }
 
         public ClientHandler getthisClient(){
-            return this;
+            return object;
         }
 
         @Override
@@ -124,24 +125,10 @@ public class Server implements Runnable{
                 }
             }catch(IOException e){
                 System.out.println("client disconnect 2");
-//                e.printStackTrace();
             }catch (NullPointerException r){
                 System.out.println("value not found");
             }
 
-        }
-
-        public void Send(String header, String body){
-            JSONObject json = new JSONObject();
-            json.put("header",header);
-            json.put("body",body);
-
-            try {
-                objectOutputStream.writeObject(json);
-                objectOutputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
