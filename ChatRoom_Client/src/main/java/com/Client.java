@@ -24,7 +24,7 @@ public class Client implements Runnable{
     @Override
     public void run() {
         try{
-            client = new Socket("127.0.0.1",16000);
+            client = new Socket("127.0.0.1",15000);
 
             objectInputStream = new ObjectInputStream(client.getInputStream());
             objectOutputStream = new ObjectOutputStream(client.getOutputStream());
@@ -77,15 +77,6 @@ public class Client implements Runnable{
                     message = scanner.nextLine();
                     if (!message.isEmpty()) {
                         if(message.toLowerCase(Locale.ENGLISH).equals("cls") || message.toLowerCase(Locale.ENGLISH).equals("clear")){
-                            String[] commandList = {"powershell.exe", "-Command", "cls"};
-
-                            ProcessBuilder pb = new ProcessBuilder(commandList);
-
-                            try {
-                                Process p = pb.start();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
 
                         }else{
                             sendMessage(objectOutputStream,"txt",message);
